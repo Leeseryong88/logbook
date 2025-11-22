@@ -43,6 +43,8 @@ export const BadgeMakerModal: React.FC<BadgeMakerModalProps> = ({ onClose, onCre
         img.onload = () => {
           setImgElement(img);
           setImageSrc(ev.target?.result as string);
+          setOffset({ x: 0, y: 0 });
+          setDragStart({ x: 0, y: 0 });
           
           // Calculate dynamic scales for Badge
           const maskDiameter = CIRCLE_RADIUS * 2;
@@ -121,6 +123,24 @@ export const BadgeMakerModal: React.FC<BadgeMakerModalProps> = ({ onClose, onCre
 
   const handleMouseUp = () => setIsDragging(false);
 
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length === 0) return;
+    const touch = e.touches[0];
+    setIsDragging(true);
+    setDragStart({ x: touch.clientX - offset.x, y: touch.clientY - offset.y });
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!isDragging || e.touches.length === 0) return;
+    const touch = e.touches[0];
+    setOffset({
+      x: touch.clientX - dragStart.x,
+      y: touch.clientY - dragStart.y
+    });
+  };
+
+  const handleTouchEnd = () => setIsDragging(false);
+
   const handleCrop = () => {
     if (!imgElement) return;
 
@@ -196,7 +216,13 @@ export const BadgeMakerModal: React.FC<BadgeMakerModalProps> = ({ onClose, onCre
               </div>
               <label className="inline-flex items-center px-6 py-3 bg-ocean-600 text-white rounded-full font-semibold hover:bg-ocean-700 cursor-pointer transition shadow-lg hover:shadow-xl">
                 <span>사진 업로드</span>
-                <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple={false}
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
               </label>
             </div>
           )}
@@ -206,12 +232,15 @@ export const BadgeMakerModal: React.FC<BadgeMakerModalProps> = ({ onClose, onCre
               <p className="text-sm text-gray-500 mb-4">원하는 영역으로 이미지를 이동하고 확대하세요.</p>
               
               <div 
-                className="relative overflow-hidden border-2 border-gray-200 rounded-lg bg-gray-100 cursor-move shadow-inner"
+                className="relative overflow-hidden border-2 border-gray-200 rounded-lg bg-gray-100 cursor-move shadow-inner touch-none"
                 style={{ width: CANVAS_SIZE, height: CANVAS_SIZE }}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
               >
                 <canvas 
                   ref={canvasRef} 

@@ -226,7 +226,13 @@ export const LogEntryForm: React.FC<LogEntryFormProps> = ({ initialData, onSave,
                     <span className="text-[11px] text-gray-500">사진 업로드</span>
                   </>
                 )}
-                <input type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple={false}
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
               </label>
             </div>
             {formData.photos && formData.photos[0] && (
