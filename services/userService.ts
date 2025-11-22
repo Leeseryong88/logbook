@@ -17,6 +17,7 @@ import {
   getDownloadURL,
   ref,
   uploadBytes,
+  uploadString,
 } from "firebase/storage";
 import { db, storage } from "./firebase";
 import { InstructorApplication, UserProfile } from "../types";
@@ -190,13 +191,17 @@ export const approveInstructorApplication = async (
 
 export const updateProfilePhoto = async (
   uid: string,
-  file: File
+  dataUrl: string
 ): Promise<void> => {
   if (!uid) throw new Error("로그인이 필요합니다.");
-  const extension = file.type?.split("/").pop()?.split(";")[0] || "jpg";
+  if (!dataUrl?.startsWith("data:")) {
+    throw new Error("invalid_image_data");
+  }
+  const mimeSegment = dataUrl.substring(5, dataUrl.indexOf(";")) || "image/jpeg";
+  const extension = mimeSegment.split("/").pop() || "jpg";
   const path = `profile/${uid}/avatar-${Date.now()}.${extension}`;
   const storageRef = ref(storage, path);
-  await uploadBytes(storageRef, file);
+  await uploadString(storageRef, dataUrl, "data_url");
   const photoURL = await getDownloadURL(storageRef);
 
   let previousPath: string | undefined;

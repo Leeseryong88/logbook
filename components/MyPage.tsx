@@ -4,6 +4,7 @@ import { BadgeCollection } from './BadgeCollection';
 import { Button } from './Button';
 import { useAuth } from '../contexts/AuthContext';
 import { AdminDashboard } from './AdminDashboard';
+import { PhotoEditorModal } from './PhotoEditorModal';
 
 interface MyPageProps {
   profile: UserProfile | null;
@@ -62,17 +63,10 @@ export const MyPage: React.FC<MyPageProps> = ({ profile, unlockedBadges, onBadge
   const [profileMessage, setProfileMessage] = useState<string | null>(null);
   const [nicknameStatus, setNicknameStatus] = useState<'idle' | 'checking' | 'available' | 'unavailable'>('idle');
   const [nicknameMessage, setNicknameMessage] = useState<string | null>(null);
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarDataUrl, setAvatarDataUrl] = useState<string | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarEditorSrc, setAvatarEditorSrc] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (avatarPreview) {
-        URL.revokeObjectURL(avatarPreview);
-      }
-    };
-  }, [avatarPreview]);
 
   const application = profile?.instructorApplication;
   const canApply =
@@ -148,9 +142,9 @@ export const MyPage: React.FC<MyPageProps> = ({ profile, unlockedBadges, onBadge
         displayName: displayNameInput,
         bio: bioInput,
       });
-      if (avatarFile) {
-        await updateProfilePhoto(avatarFile);
-        setAvatarFile(null);
+      if (avatarDataUrl) {
+        await updateProfilePhoto(avatarDataUrl);
+        setAvatarDataUrl(null);
         setAvatarPreview(null);
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
@@ -167,12 +161,25 @@ export const MyPage: React.FC<MyPageProps> = ({ profile, unlockedBadges, onBadge
     }
   };
 
-  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    setAvatarFile(file);
-    const previewUrl = URL.createObjectURL(file);
-    setAvatarPreview(previewUrl);
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setAvatarEditorSrc(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleAvatarCropSave = (cropped: string) => {
+    setAvatarDataUrl(cropped);
+    setAvatarPreview(cropped);
+    setAvatarEditorSrc(null);
   };
 
   return (
@@ -181,14 +188,23 @@ export const MyPage: React.FC<MyPageProps> = ({ profile, unlockedBadges, onBadge
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-4">
             <div className="relative">
-              <div className="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-white shadow-lg bg-ocean-100 flex items-center justify-center overflow-hidden text-2xl text-ocean-600 font-bold">
+              <button
+                type="button"
+                onClick={() => isEditingProfile && fileInputRef.current?.click()}
+                className={`w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-white shadow-lg bg-ocean-100 flex items-center justify-center overflow-hidden text-2xl text-ocean-600 font-bold focus:outline-none ${isEditingProfile ? 'group cursor-pointer' : ''}`}
+              >
                 {currentAvatar ? (
-                  <img src={currentAvatar} alt="프로필 사진" className="w-full h-full object-cover" />
+                  <img src={currentAvatar} alt="프로필 사진" className="w-full h-full object-cover pointer-events-none" />
                 ) : (
                   <span>{initials}</span>
                 )}
-              </div>
-              {avatarFile && (
+                {isEditingProfile && (
+                  <span className="absolute inset-0 bg-black/40 text-white text-xs opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                    사진 변경
+                  </span>
+                )}
+              </button>
+              {avatarDataUrl && (
                 <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full border border-purple-200">
                   미저장
                 </span>
@@ -210,8 +226,8 @@ export const MyPage: React.FC<MyPageProps> = ({ profile, unlockedBadges, onBadge
               onClick={() => {
                 setIsEditingProfile((prev) => !prev);
                 setProfileMessage(null);
-                setAvatarFile(null);
                 setAvatarPreview(null);
+                setAvatarDataUrl(null);
                 if (fileInputRef.current) fileInputRef.current.value = '';
               }}
             >
@@ -255,22 +271,16 @@ export const MyPage: React.FC<MyPageProps> = ({ profile, unlockedBadges, onBadge
             </div>
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">프로필 사진</label>
-              <div className="flex items-center gap-3">
-                <Button type="button" variant="secondary" size="sm" onClick={() => fileInputRef.current?.click()}>
-                  사진 선택
-                </Button>
-                {avatarFile && (
-                  <span className="text-xs text-gray-500 truncate max-w-[140px]">{avatarFile.name}</span>
-                )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  ref={fileInputRef}
-                  onChange={handleAvatarChange}
-                  className="hidden"
-                />
-              </div>
-              <p className="text-xs text-gray-400">정사각형 이미지를 권장합니다. JPG, PNG 등 5MB 이하 파일을 업로드하세요.</p>
+              <p className="text-xs text-gray-500">
+                위 프로필 이미지를 눌러 사진을 선택하고 위치를 조정하세요. 정사각형 이미지를 권장합니다.
+              </p>
+              <input
+                type="file"
+                accept="image/*"
+                ref={fileInputRef}
+                onChange={handleAvatarFileSelect}
+                className="hidden"
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">소개 (선택)</label>
@@ -369,6 +379,14 @@ export const MyPage: React.FC<MyPageProps> = ({ profile, unlockedBadges, onBadge
       <section>
         <BadgeCollection unlockedBadges={unlockedBadges} onBadgeCreated={onBadgeCreated} />
       </section>
+
+      {avatarEditorSrc && (
+        <PhotoEditorModal
+          imageSrc={avatarEditorSrc}
+          onClose={() => setAvatarEditorSrc(null)}
+          onSave={(cropped) => handleAvatarCropSave(cropped)}
+        />
+      )}
     </div>
   );
 };

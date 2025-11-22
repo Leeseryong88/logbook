@@ -27,7 +27,7 @@ interface AuthContextValue {
   applyForInstructor: (file: File, notes: string) => Promise<void>;
   updateAccountInfo: (payload: { displayName?: string; bio?: string }) => Promise<void>;
   checkDisplayName: (displayName: string) => Promise<boolean>;
-  updateProfilePhoto: (file: File) => Promise<void>;
+  updateProfilePhoto: (dataUrl: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -127,9 +127,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const updateProfilePhoto = async (file: File) => {
+  const updateProfilePhoto = async (dataUrl: string) => {
     if (!user) throw new Error('로그인이 필요합니다.');
-    await updateProfilePhotoRequest(user.uid, file);
+    await updateProfilePhotoRequest(user.uid, dataUrl);
   };
 
   const role = profile?.role ?? 'diver';
