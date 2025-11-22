@@ -34,7 +34,7 @@ const displayNameDoc = (normalized: string) =>
 export const reserveDisplayName = async (
   uid: string,
   displayName: string
-): Promise<void> => {
+): Promise<boolean> => {
   const normalized = normalizeDisplayName(displayName);
   if (!normalized) {
     throw new Error("invalid_display_name");
@@ -56,6 +56,8 @@ export const reserveDisplayName = async (
       updatedAt: Date.now(),
     });
   });
+
+  return true;
 };
 
 export const createUserProfileIfMissing = async (user: User) => {

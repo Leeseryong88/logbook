@@ -25,7 +25,7 @@ interface AuthContextValue {
   resetPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
   applyForInstructor: (file: File, notes: string) => Promise<void>;
-  updateAccountInfo: (payload: { displayName?: string; bio?: string }) => Promise<void>;
+  updateAccountInfo: (payload: { displayName?: string; bio?: string; mode?: 'check' }) => Promise<boolean | void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -111,8 +111,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     await submitInstructorApplication(user.uid, file, notes);
   };
 
-  const updateAccountInfo = async (payload: { displayName?: string; bio?: string }) => {
+  const updateAccountInfo = async (payload: { displayName?: string; bio?: string; mode?: 'check' }) => {
     if (!user) throw new Error('로그인이 필요합니다.');
+
+    if (payload.mode === 'check' && payload.displayName) {
+      const available = await reserveDisplayName(user.uid, payload.displayName);
+      return available;
+    }
+
     await updateProfileFields(user.uid, payload);
     if (payload.displayName) {
       await updateProfile(user, { displayName: payload.displayName });

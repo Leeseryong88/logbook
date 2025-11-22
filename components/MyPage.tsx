@@ -59,6 +59,8 @@ export const MyPage: React.FC<MyPageProps> = ({ profile, unlockedBadges, onBadge
   const [bioInput, setBioInput] = useState(profile?.bio || '');
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileMessage, setProfileMessage] = useState<string | null>(null);
+  const [nicknameStatus, setNicknameStatus] = useState<'idle' | 'checking' | 'available' | 'unavailable'>('idle');
+  const [nicknameMessage, setNicknameMessage] = useState<string | null>(null);
 
   const application = profile?.instructorApplication;
   const canApply =
@@ -88,8 +90,35 @@ export const MyPage: React.FC<MyPageProps> = ({ profile, unlockedBadges, onBadge
 
   const badgeInfo = roleStyles[role];
 
+  const handleNicknameCheck = async () => {
+    if (!displayNameInput.trim()) {
+      setNicknameStatus('unavailable');
+      setNicknameMessage('닉네임을 입력해주세요.');
+      return;
+    }
+    setNicknameStatus('checking');
+    setNicknameMessage(null);
+    try {
+      const available = await updateAccountInfo({ displayName: displayNameInput, bio: bioInput, mode: 'check' } as any);
+      if (available) {
+        setNicknameStatus('available');
+        setNicknameMessage('사용 가능한 닉네임입니다.');
+      } else {
+        setNicknameStatus('unavailable');
+        setNicknameMessage('이미 사용 중인 닉네임입니다.');
+      }
+    } catch (error: any) {
+      setNicknameStatus('unavailable');
+      setNicknameMessage(error?.message || '닉네임 확인 중 오류가 발생했습니다.');
+    }
+  };
+
   const handleProfileSave = async () => {
     if (!profile) return;
+    if (displayNameInput.trim() && displayNameInput.trim() !== profile.displayName && nicknameStatus !== 'available') {
+      setProfileMessage('닉네임 중복 확인을 완료해주세요.');
+      return;
+    }
     try {
       setProfileSaving(true);
       setProfileMessage(null);
@@ -99,6 +128,8 @@ export const MyPage: React.FC<MyPageProps> = ({ profile, unlockedBadges, onBadge
       });
       setProfileMessage('계정 정보가 저장되었습니다.');
       setIsEditingProfile(false);
+      setNicknameStatus('idle');
+      setNicknameMessage(null);
     } catch (error: any) {
       setProfileMessage(error?.message || '저장 중 오류가 발생했습니다.');
     } finally {
@@ -133,14 +164,34 @@ export const MyPage: React.FC<MyPageProps> = ({ profile, unlockedBadges, onBadge
           <div className="grid md:grid-cols-2 gap-4 border-t pt-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">닉네임</label>
-              <input
-                type="text"
-                value={displayNameInput}
-                onChange={(e) => setDisplayNameInput(e.target.value)}
-                className="w-full border rounded-lg px-3 py-2 focus:ring-ocean-500 focus:border-ocean-500"
-                maxLength={20}
-              />
-              <p className="text-xs text-gray-400 mt-1">닉네임 변경 시 중복 확인 후 저장됩니다.</p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={displayNameInput}
+                  onChange={(e) => {
+                    setDisplayNameInput(e.target.value);
+                    setNicknameStatus('idle');
+                    setNicknameMessage(null);
+                  }}
+                  className="w-full border rounded-lg px-3 py-2 focus:ring-ocean-500 focus:border-ocean-500"
+                  maxLength={20}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={handleNicknameCheck}
+                  isLoading={nicknameStatus === 'checking'}
+                  disabled={nicknameStatus === 'checking' || !displayNameInput.trim()}
+                >
+                  중복 확인
+                </Button>
+              </div>
+              {nicknameMessage && (
+                <p className={`text-xs mt-1 ${nicknameStatus === 'available' ? 'text-emerald-600' : 'text-red-500'}`}>
+                  {nicknameMessage}
+                </p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">소개 (선택)</label>
