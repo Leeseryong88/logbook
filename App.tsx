@@ -199,12 +199,12 @@ const App: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
         
         {/* Desktop Navigation Tabs */}
-        <div className="hidden md:flex space-x-1 bg-white p-1 rounded-xl shadow-sm border border-ocean-100 w-fit mb-8">
+        <div className="hidden md:flex items-center space-x-2 mb-8 bg-white/50 backdrop-blur-sm p-1.5 rounded-2xl border border-white/20 shadow-sm w-fit">
           {[
-            { id: 'dashboard', label: '대시보드' },
-            { id: 'logs', label: '로그북' },
-            { id: 'map', label: '지도' },
-            { id: 'mypage', label: '마이페이지' }
+            { id: 'dashboard', label: '대시보드', icon: '📊' },
+            { id: 'logs', label: '로그북', icon: '📖' },
+            { id: 'map', label: '지도', icon: '🗺️' },
+            { id: 'mypage', label: '마이페이지', icon: '👤' }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -214,12 +214,13 @@ const App: React.FC = () => {
                   setMapFocusLogId(null);
                 }
               }}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+              className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 ${
                 currentView === tab.id 
-                  ? 'bg-ocean-100 text-ocean-800 shadow-inner' 
-                  : 'text-gray-500 hover:bg-gray-50'
+                  ? 'bg-ocean-600 text-white shadow-md transform scale-[1.02]' 
+                  : 'text-gray-500 hover:bg-white hover:text-ocean-600 hover:shadow-sm'
               }`}
             >
+              <span>{tab.icon}</span>
               {tab.label}
             </button>
           ))}
@@ -232,7 +233,7 @@ const App: React.FC = () => {
           </div>
         ) : (
           <div className="animate-fade-in">
-            {currentView === 'dashboard' && <Dashboard logs={logs} stats={stats} />}
+            {currentView === 'dashboard' && <Dashboard logs={logs} stats={stats} userName={userName} />}
             
             {currentView === 'logs' && <DiveList logs={logs} onSelectLog={setSelectedLog} />}
             
