@@ -1,0 +1,39 @@
+.root {
+  font-family: 'Inter', sans-serif;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #f0f9ff;
+  margin: 0;
+}
+
+/* Custom scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #7dd3fc;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #38bdf8;
+}
+
+/* Leaflet pane stacking context */
+.leaflet-pane {
+  z-index: 10;
+}
+
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 20;
+}
+
+
