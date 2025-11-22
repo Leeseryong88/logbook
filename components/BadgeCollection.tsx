@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Badge } from '../types';
-import { AVAILABLE_BADGES } from '../services/storageService';
+import { AVAILABLE_BADGES, deleteCustomBadge } from '../services/storageService';
 import { Button } from './Button';
 import { BadgeMakerModal } from './BadgeMakerModal';
+import { useAuth } from '../contexts/AuthContext';
 
 interface BadgeCollectionProps {
   unlockedBadges: Badge[];
@@ -11,6 +12,8 @@ interface BadgeCollectionProps {
 
 export const BadgeCollection: React.FC<BadgeCollectionProps> = ({ unlockedBadges, onBadgeCreated }) => {
   const [isMakerOpen, setIsMakerOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const { user } = useAuth();
   const unlockedIds = new Set(unlockedBadges.map(b => b.id));
 
   // Combine system badges and custom badges (custom badges are in unlockedBadges but not in AVAILABLE_BADGES)
@@ -25,6 +28,28 @@ export const BadgeCollection: React.FC<BadgeCollectionProps> = ({ unlockedBadges
   const handleCreated = () => {
     if (onBadgeCreated) {
       void onBadgeCreated();
+    }
+  };
+
+  const handleDeleteBadge = async (badgeId: string) => {
+    if (!user) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+    const confirmDelete = window.confirm('이 배지를 삭제할까요? 삭제 후에는 복구할 수 없습니다.');
+    if (!confirmDelete) return;
+
+    try {
+      setDeletingId(badgeId);
+      await deleteCustomBadge(badgeId, user.uid);
+      if (onBadgeCreated) {
+        await onBadgeCreated();
+      }
+    } catch (error) {
+      console.error(error);
+      alert('배지 삭제 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -64,8 +89,17 @@ export const BadgeCollection: React.FC<BadgeCollectionProps> = ({ unlockedBadges
               {customBadges.map((badge) => (
                 <div 
                   key={badge.id} 
-                  className="flex flex-col items-center p-4 rounded-xl text-center bg-white border-2 border-purple-100 shadow-sm hover:shadow-md hover:scale-105 transition-all"
+                  className="relative flex flex-col items-center p-4 rounded-xl text-center bg-white border-2 border-purple-100 shadow-sm hover:shadow-md hover:scale-105 transition-all"
                 >
+                  <button
+                    type="button"
+                    className="absolute top-2 right-2 text-xs text-gray-400 hover:text-red-500 focus:outline-none"
+                    onClick={() => handleDeleteBadge(badge.id)}
+                    disabled={deletingId === badge.id}
+                    title="배지 삭제"
+                  >
+                    {deletingId === badge.id ? '삭제 중...' : '✕'}
+                  </button>
                   <div className="w-16 h-16 mb-3 rounded-full overflow-hidden border-2 border-purple-200 shadow-inner animate-float">
                     {badge.icon.startsWith('data:image') || badge.icon.startsWith('http') ? (
                       <img src={badge.icon} alt={badge.name} className="w-full h-full object-cover" />
@@ -114,38 +148,6 @@ export const BadgeCollection: React.FC<BadgeCollectionProps> = ({ unlockedBadges
               );
             })}
           </div>
-        </div>
-      </div>
-        <h3 className="text-lg font-bold text-gray-800 mb-4">나의 업적</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {systemBadges.map((badge) => {
-            const isUnlocked = unlockedIds.has(badge.id);
-            return (
-              <div 
-                key={badge.id} 
-                className={`flex flex-col items-center p-4 rounded-xl text-center transition-all ${
-                  isUnlocked 
-                    ? 'bg-gradient-to-br from-ocean-50 to-white border border-ocean-100 shadow-sm hover:shadow-md hover:scale-105' 
-                    : 'bg-gray-50 opacity-50 grayscale'
-                }`}
-              >
-                <div className={`text-4xl mb-3 ${isUnlocked ? 'animate-float' : ''}`}>
-                  {badge.icon}
-                </div>
-                <h3 className={`font-bold text-sm mb-1 ${isUnlocked ? 'text-gray-900' : 'text-gray-500'}`}>
-                  {badge.name}
-                </h3>
-                <p className="text-xs text-gray-500 line-clamp-2">
-                  {badge.description}
-                </p>
-                {isUnlocked && (
-                  <span className="mt-2 px-2 py-0.5 bg-yellow-100 text-yellow-800 text-[10px] rounded-full font-bold">
-                    획득!
-                  </span>
-                )}
-              </div>
-            );
-          })}
         </div>
       </div>
 

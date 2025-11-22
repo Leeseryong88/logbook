@@ -95,9 +95,35 @@ export const fetchPendingInstructorApplications = async (): Promise<UserProfile[
   return snapshot.docs.map((docSnap) => docSnap.data() as UserProfile);
 };
 
+const checkNicknameViaApi = async (displayName: string): Promise<boolean | null> => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  try {
+    const response = await fetch(`/api/check-nickname?name=${encodeURIComponent(displayName)}`);
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => ({}));
+      throw new Error(errorBody?.error || `nickname_api_${response.status}`);
+    }
+    const data = await response.json();
+    if (typeof data?.available === "boolean") {
+      return data.available;
+    }
+  } catch (error) {
+    console.warn("Nickname API check failed, falling back to client query", error);
+  }
+  return null;
+};
+
 export const isDisplayNameAvailable = async (displayName: string): Promise<boolean> => {
   const trimmed = displayName.trim();
   if (!trimmed) return false;
+
+  const apiResult = await checkNicknameViaApi(trimmed);
+  if (typeof apiResult === "boolean") {
+    return apiResult;
+  }
+
   const q = query(
     usersCollection,
     where("displayName", "==", trimmed),

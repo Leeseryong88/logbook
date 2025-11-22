@@ -284,6 +284,19 @@ export const saveCustomBadge = async (
   );
 };
 
+export const deleteCustomBadge = async (badgeId: string, userId?: string): Promise<void> => {
+  if (!userId) throw new Error('User not authenticated');
+  const badgeRef = doc(customBadgesCollection(userId), badgeId);
+  const snapshot = await getDoc(badgeRef);
+  if (snapshot.exists()) {
+    const data = snapshot.data() as Omit<Badge, 'condition'>;
+    if (data.storagePath) {
+      await deleteStoragePath(data.storagePath);
+    }
+  }
+  await deleteDoc(badgeRef);
+};
+
 export const getUnlockedBadges = async (logs: DiveLog[], userId?: string): Promise<Badge[]> => {
   const standardBadges = AVAILABLE_BADGES.filter((badge) => badge.condition(logs)).map(
     (badge) => ({
