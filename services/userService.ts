@@ -34,7 +34,7 @@ const displayNameDoc = (normalized: string) =>
 export const reserveDisplayName = async (
   uid: string,
   displayName: string,
-  options?: { validateOnly?: boolean }
+  options?: { validateOnly?: boolean; previousDisplayName?: string }
 ): Promise<boolean> => {
   const normalized = normalizeDisplayName(displayName);
   if (!normalized) {
@@ -57,6 +57,13 @@ export const reserveDisplayName = async (
         normalized,
         updatedAt: Date.now(),
       });
+
+      if (options?.previousDisplayName) {
+        const previousNormalized = normalizeDisplayName(options.previousDisplayName);
+        if (previousNormalized && previousNormalized !== normalized) {
+          tx.delete(displayNameDoc(previousNormalized));
+        }
+      }
     }
 
     return true;

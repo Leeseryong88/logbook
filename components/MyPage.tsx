@@ -49,7 +49,7 @@ const renderApplicationStatus = (application?: InstructorApplication) => {
 };
 
 export const MyPage: React.FC<MyPageProps> = ({ profile, unlockedBadges, onBadgeCreated }) => {
-  const { applyForInstructor, role, updateAccountInfo } = useAuth();
+  const { applyForInstructor, role, updateAccountInfo, checkDisplayName } = useAuth();
   const [certificateFile, setCertificateFile] = useState<File | null>(null);
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -96,10 +96,15 @@ export const MyPage: React.FC<MyPageProps> = ({ profile, unlockedBadges, onBadge
       setNicknameMessage('닉네임을 입력해주세요.');
       return;
     }
+    if (displayNameInput.trim() === (profile?.displayName || '').trim()) {
+      setNicknameStatus('available');
+      setNicknameMessage('현재 사용 중인 닉네임입니다.');
+      return;
+    }
     setNicknameStatus('checking');
     setNicknameMessage(null);
     try {
-      const available = await updateAccountInfo({ displayName: displayNameInput, bio: bioInput, mode: 'check' } as any);
+      const available = await checkDisplayName(displayNameInput);
       if (available) {
         setNicknameStatus('available');
         setNicknameMessage('사용 가능한 닉네임입니다.');
@@ -214,6 +219,8 @@ export const MyPage: React.FC<MyPageProps> = ({ profile, unlockedBadges, onBadge
                   setBioInput(profile?.bio || '');
                   setIsEditingProfile(false);
                   setProfileMessage(null);
+                  setNicknameStatus('idle');
+                  setNicknameMessage(null);
                 }}
                 disabled={profileSaving}
               >
