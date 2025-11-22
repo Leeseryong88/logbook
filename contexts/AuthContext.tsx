@@ -11,7 +11,7 @@ import {
 } from 'firebase/auth';
 import { auth, googleProvider } from '../services/firebase';
 import { UserProfile, UserRole } from '../types';
-import { createUserProfileIfMissing, submitInstructorApplication, subscribeToUserProfile } from '../services/userService';
+import { createUserProfileIfMissing, reserveDisplayName, submitInstructorApplication, subscribeToUserProfile } from '../services/userService';
 
 interface AuthContextValue {
   user: User | null;
@@ -82,7 +82,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const registerWithEmail = async (email: string, password: string, displayName?: string) => {
     const credential = await createUserWithEmailAndPassword(auth, email, password);
     if (displayName) {
-      await updateProfile(credential.user, { displayName });
+      try {
+        await updateProfile(credential.user, { displayName });
+        await reserveDisplayName(credential.user.uid, displayName);
+      } catch (error) {
+        // Ensure we don't leave a partially created account without nickname reservation
+        await credential.user.delete();
+        throw error;
+      }
     }
   };
 

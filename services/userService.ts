@@ -7,6 +7,7 @@ import {
   limit,
   onSnapshot,
   query,
+  runTransaction,
   setDoc,
   updateDoc,
   where,
@@ -20,26 +21,69 @@ import { db, storage } from "./firebase";
 import { InstructorApplication, UserProfile } from "../types";
 
 const usersCollection = collection(db, "users");
+const displayNamesCollection = collection(db, "displayNames");
 
 export const userDocRef = (uid: string) => doc(db, "users", uid);
+
+const normalizeDisplayName = (value: string) =>
+  value.trim().toLowerCase().replace(/\s+/g, " ");
+
+const displayNameDoc = (normalized: string) =>
+  doc(displayNamesCollection, normalized);
+
+export const reserveDisplayName = async (
+  uid: string,
+  displayName: string
+): Promise<void> => {
+  const normalized = normalizeDisplayName(displayName);
+  if (!normalized) {
+    throw new Error("invalid_display_name");
+  }
+
+  await runTransaction(db, async (tx) => {
+    const ref = displayNameDoc(normalized);
+    const snapshot = await tx.get(ref);
+    const existingUid = snapshot.exists() ? snapshot.data()?.uid : null;
+
+    if (existingUid && existingUid !== uid) {
+      throw new Error("display_name_taken");
+    }
+
+    tx.set(ref, {
+      uid,
+      displayName,
+      normalized,
+      updatedAt: Date.now(),
+    });
+  });
+};
 
 export const createUserProfileIfMissing = async (user: User) => {
   if (!user.uid) return;
   const docRef = userDocRef(user.uid);
   const snap = await getDoc(docRef);
-  if (snap.exists()) return;
+  if (!snap.exists()) {
+    const profile: UserProfile = {
+      uid: user.uid,
+      email: user.email || "",
+      displayName: user.displayName || "",
+      role: "diver",
+      createdAt: new Date().toISOString(),
+      instructorApplication: {
+        status: "none",
+      },
+    };
+    await setDoc(docRef, profile, { merge: true });
+  }
 
-  const profile: UserProfile = {
-    uid: user.uid,
-    email: user.email || "",
-    displayName: user.displayName || "",
-    role: "diver",
-    createdAt: new Date().toISOString(),
-    instructorApplication: {
-      status: "none",
-    },
-  };
-  await setDoc(docRef, profile, { merge: true });
+  const effectiveName = user.displayName || snap.data()?.displayName || "";
+  if (effectiveName) {
+    try {
+      await reserveDisplayName(user.uid, effectiveName);
+    } catch (error) {
+      console.warn("Failed to ensure display name reservation", error);
+    }
+  }
 };
 
 export const subscribeToUserProfile = (
@@ -95,42 +139,11 @@ export const fetchPendingInstructorApplications = async (): Promise<UserProfile[
   return snapshot.docs.map((docSnap) => docSnap.data() as UserProfile);
 };
 
-const checkNicknameViaApi = async (displayName: string): Promise<boolean | null> => {
-  if (typeof window === "undefined") {
-    return null;
-  }
-  try {
-    const response = await fetch(`/api/check-nickname?name=${encodeURIComponent(displayName)}`);
-    if (!response.ok) {
-      const errorBody = await response.json().catch(() => ({}));
-      throw new Error(errorBody?.error || `nickname_api_${response.status}`);
-    }
-    const data = await response.json();
-    if (typeof data?.available === "boolean") {
-      return data.available;
-    }
-  } catch (error) {
-    console.warn("Nickname API check failed, falling back to client query", error);
-  }
-  return null;
-};
-
 export const isDisplayNameAvailable = async (displayName: string): Promise<boolean> => {
-  const trimmed = displayName.trim();
-  if (!trimmed) return false;
-
-  const apiResult = await checkNicknameViaApi(trimmed);
-  if (typeof apiResult === "boolean") {
-    return apiResult;
-  }
-
-  const q = query(
-    usersCollection,
-    where("displayName", "==", trimmed),
-    limit(1)
-  );
-  const snapshot = await getDocs(q);
-  return snapshot.empty;
+  const normalized = normalizeDisplayName(displayName);
+  if (!normalized) return false;
+  const snapshot = await getDoc(displayNameDoc(normalized));
+  return !snapshot.exists();
 };
 
 export const approveInstructorApplication = async (

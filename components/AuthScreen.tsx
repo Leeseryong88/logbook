@@ -18,6 +18,10 @@ const firebaseErrorToMessage = (code?: string) => {
       return '비밀번호는 최소 6자 이상이어야 합니다.';
     case 'auth/popup-closed-by-user':
       return '인증 창이 닫혔습니다. 다시 시도해주세요.';
+    case 'display_name_taken':
+      return '이미 사용 중인 닉네임입니다.';
+    case 'invalid_display_name':
+      return '닉네임을 다시 확인해주세요.';
     default:
       return '요청을 처리하지 못했습니다. 잠시 후 다시 시도해주세요.';
   }
@@ -62,7 +66,7 @@ export const AuthScreen: React.FC = () => {
         await registerWithEmail(email, password, displayName);
       }
     } catch (err: any) {
-      setError(firebaseErrorToMessage(err?.code));
+      setError(firebaseErrorToMessage(err?.code || err?.message));
     } finally {
       setSubmitting(false);
     }
