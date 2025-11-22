@@ -76,6 +76,7 @@ export interface Badge {
   icon: string;
   storagePath?: string;
   unlockedAt?: string; // ISO Date string if unlocked
+  category?: 'marine' | 'terrain';
   condition: (logs: DiveLog[]) => boolean;
 }
 

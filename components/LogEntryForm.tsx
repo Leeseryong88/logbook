@@ -370,9 +370,9 @@ export const LogEntryForm: React.FC<LogEntryFormProps> = ({ initialData, onSave,
         ></textarea>
       </div>
 
-      {/* Marine Life - Only Badges now */}
+      {/* Marine Observation - Only Badges now */}
       <div className="mb-6">
-        <h3 className="font-semibold text-ocean-700 border-b pb-2 mb-4">해양 생물 기록</h3>
+        <h3 className="font-semibold text-ocean-700 border-b pb-2 mb-4">해양 관측 기록</h3>
         
         {/* Badge Selector Only */}
         {badgesLoading ? (
@@ -425,7 +425,7 @@ export const LogEntryForm: React.FC<LogEntryFormProps> = ({ initialData, onSave,
             </div>
           ))}
           {(!formData.marineLifeSightings || formData.marineLifeSightings.length === 0) && (
-            <p className="text-sm text-gray-400 italic mt-2">기록된 생물이 없습니다.</p>
+            <p className="text-sm text-gray-400 italic mt-2">기록된 관측 대상이 없습니다.</p>
           )}
         </div>
       </div>

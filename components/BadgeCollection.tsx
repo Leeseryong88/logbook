@@ -21,6 +21,8 @@ export const BadgeCollection: React.FC<BadgeCollectionProps> = ({ unlockedBadges
   
   // 1. Get all custom badges from the unlocked list (they have IDs starting with 'custom-' or aren't in available)
   const customBadges = unlockedBadges.filter(b => !AVAILABLE_BADGES.find(ab => ab.id === b.id));
+  const marineBadges = customBadges.filter((badge) => badge.category !== 'terrain');
+  const terrainBadges = customBadges.filter((badge) => badge.category === 'terrain');
   
   // 2. Available system badges
   const systemBadges = AVAILABLE_BADGES;
@@ -59,10 +61,10 @@ export const BadgeCollection: React.FC<BadgeCollectionProps> = ({ unlockedBadges
       <div className="bg-white p-6 rounded-xl shadow-sm border border-ocean-100 space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
-            <div className="text-4xl sm:text-5xl">🐋</div>
+            <div className="text-4xl sm:text-5xl">🪸</div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">생물 배지</h2>
-              <p className="text-sm text-gray-500 mt-1">직접 촬영한 해양 생물 사진으로 나만의 특별한 배지 컬렉션을 완성해보세요.</p>
+              <h2 className="text-xl font-bold text-gray-900">나만의 배지</h2>
+              <p className="text-sm text-gray-500 mt-1">직접 촬영한 해양 생물이나 특수 지형 사진으로 컬렉션을 완성해보세요.</p>
             </div>
           </div>
           <div>
@@ -71,22 +73,25 @@ export const BadgeCollection: React.FC<BadgeCollectionProps> = ({ unlockedBadges
               className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 border-none shadow-md w-full sm:w-auto"
               icon={<span>✨</span>}
             >
-              생물 배지 만들기
+              배지 만들기
             </Button>
           </div>
         </div>
 
-        {/* Custom Badges Section (if any) */}
-        {customBadges.length > 0 && (
+        {marineBadges.length === 0 && terrainBadges.length === 0 && (
+          <p className="text-sm text-gray-500">아직 생성한 배지가 없습니다. 새로운 배지를 만들어보세요!</p>
+        )}
+
+        {marineBadges.length > 0 && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold text-gray-900 flex items-center">
-                나의 해양 생물들
-                <span className="ml-2 text-xs text-gray-400 font-normal">({customBadges.length})</span>
+                해양 생물 컬렉션
+                <span className="ml-2 text-xs text-gray-400 font-normal">({marineBadges.length})</span>
               </h3>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {customBadges.map((badge) => (
+              {marineBadges.map((badge) => (
                 <div 
                   key={badge.id} 
                   className="relative flex flex-col items-center p-4 rounded-xl text-center bg-white border-2 border-purple-100 shadow-sm hover:shadow-md hover:scale-105 transition-all"
@@ -101,6 +106,44 @@ export const BadgeCollection: React.FC<BadgeCollectionProps> = ({ unlockedBadges
                     {deletingId === badge.id ? '삭제 중...' : '✕'}
                   </button>
                   <div className="w-16 h-16 mb-3 rounded-full overflow-hidden border-2 border-purple-200 shadow-inner animate-float">
+                    {badge.icon.startsWith('data:image') || badge.icon.startsWith('http') ? (
+                      <img src={badge.icon} alt={badge.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-4xl leading-[4rem]">{badge.icon}</span>
+                    )}
+                  </div>
+                  <h3 className="font-bold text-sm mb-1 text-gray-900">{badge.name}</h3>
+                  <p className="text-xs text-gray-500 line-clamp-2">{badge.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {terrainBadges.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-gray-900 flex items-center">
+                특수 지형 컬렉션
+                <span className="ml-2 text-xs text-gray-400 font-normal">({terrainBadges.length})</span>
+              </h3>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {terrainBadges.map((badge) => (
+                <div 
+                  key={badge.id} 
+                  className="relative flex flex-col items-center p-4 rounded-xl text-center bg-white border-2 border-orange-100 shadow-sm hover:shadow-md hover:scale-105 transition-all"
+                >
+                  <button
+                    type="button"
+                    className="absolute top-2 right-2 text-xs text-gray-400 hover:text-red-500 focus:outline-none"
+                    onClick={() => handleDeleteBadge(badge.id)}
+                    disabled={deletingId === badge.id}
+                    title="배지 삭제"
+                  >
+                    {deletingId === badge.id ? '삭제 중...' : '✕'}
+                  </button>
+                  <div className="w-16 h-16 mb-3 rounded-full overflow-hidden border-2 border-orange-200 shadow-inner animate-float">
                     {badge.icon.startsWith('data:image') || badge.icon.startsWith('http') ? (
                       <img src={badge.icon} alt={badge.name} className="w-full h-full object-cover" />
                     ) : (

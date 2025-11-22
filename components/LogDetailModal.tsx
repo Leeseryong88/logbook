@@ -31,7 +31,12 @@ export const LogDetailModal: React.FC<LogDetailModalProps> = ({ log, onClose, on
           {log.photos && log.photos.length > 0 && (
             <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide -mx-6 px-6 sm:mx-0 sm:px-0">
               {log.photos.map((photo, idx) => (
-                <img key={idx} src={photo} alt="Dive" className="h-64 w-auto rounded-lg shadow-md object-cover shrink-0" />
+                <img 
+                  key={idx} 
+                  src={photo} 
+                  alt="Dive" 
+                  className="h-64 w-auto rounded-lg shadow-md object-cover object-center shrink-0" 
+                />
               ))}
             </div>
           )}
@@ -80,10 +85,10 @@ export const LogDetailModal: React.FC<LogDetailModalProps> = ({ log, onClose, on
             </p>
           </div>
 
-          {/* Marine Life */}
+          {/* Marine Observation */}
           {log.marineLifeSightings && log.marineLifeSightings.length > 0 && (
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Marine Life Encounters</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">해양 관측 기록</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {log.marineLifeSightings.map((life, idx) => (
                    <div key={idx} className="flex items-start p-3 bg-teal-50 rounded-lg border border-teal-100">

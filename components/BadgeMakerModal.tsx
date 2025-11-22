@@ -11,7 +11,7 @@ interface BadgeMakerModalProps {
 
 export const BadgeMakerModal: React.FC<BadgeMakerModalProps> = ({ onClose, onCreated }) => {
   const { user } = useAuth();
-  const [step, setStep] = useState<'upload' | 'crop' | 'details'>('upload');
+  const [step, setStep] = useState<'category' | 'crop' | 'details'>('category');
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [croppedImage, setCroppedImage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -19,9 +19,11 @@ export const BadgeMakerModal: React.FC<BadgeMakerModalProps> = ({ onClose, onCre
   // Form details
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [category, setCategory] = useState<'marine' | 'terrain'>('marine');
 
   // Canvas refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [imgElement, setImgElement] = useState<HTMLImageElement | null>(null);
   
   // Crop state
@@ -33,6 +35,34 @@ export const BadgeMakerModal: React.FC<BadgeMakerModalProps> = ({ onClose, onCre
 
   const CANVAS_SIZE = 300;
   const CIRCLE_RADIUS = 120;
+
+  const resetEditorState = () => {
+    setImageSrc(null);
+    setCroppedImage(null);
+    setImgElement(null);
+    setScale(1);
+    setMinScale(0.1);
+    setOffset({ x: 0, y: 0 });
+    setDragStart({ x: 0, y: 0 });
+  };
+
+  const openFileDialog = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleCategorySelect = (type: 'marine' | 'terrain') => {
+    setCategory(type);
+    resetEditorState();
+    openFileDialog();
+  };
+
+  const handleBackToCategory = () => {
+    resetEditorState();
+    setStep('category');
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -181,8 +211,9 @@ export const BadgeMakerModal: React.FC<BadgeMakerModalProps> = ({ onClose, onCre
       await saveCustomBadge({
         id: `custom-${Date.now()}`,
         name,
-        description: description || '나만의 해양 생물',
+        description: description || (category === 'terrain' ? '인상적인 특수 지형' : '나만의 해양 생물'),
         icon: croppedImage,
+        category,
       }, user.uid);
 
       if (onCreated) {
@@ -198,38 +229,61 @@ export const BadgeMakerModal: React.FC<BadgeMakerModalProps> = ({ onClose, onCre
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in">
         <div className="p-4 border-b flex justify-between items-center bg-ocean-50">
-          <h3 className="font-bold text-lg text-ocean-900">생물 배지 만들기</h3>
+          <h3 className="font-bold text-lg text-ocean-900">배지 만들기</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             &times;
           </button>
         </div>
 
         <div className="p-6">
-          {step === 'upload' && (
-            <div className="text-center py-8">
-              <div className="mb-6">
-                <div className="w-24 h-24 bg-ocean-100 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">
-                  📸
-                </div>
-                <p className="text-gray-600 mb-2">좋아하는 해양 생물 사진을 올려주세요.</p>
-                <p className="text-xs text-gray-400">배지로 만들 영역을 직접 선택할 수 있어요.</p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple={false}
+            onChange={handleFileChange}
+            className="hidden"
+          />
+          {step === 'category' && (
+            <div className="space-y-6 py-4 text-center">
+              <div>
+                <p className="text-sm text-gray-600">만들고 싶은 배지 종류를 고르면 바로 사진 선택 창이 열립니다.</p>
+                <p className="text-xs text-gray-400 mt-1">사진을 고른 뒤에는 영역 자르기 단계가 자동으로 시작돼요.</p>
               </div>
-              <label className="inline-flex items-center px-6 py-3 bg-ocean-600 text-white rounded-full font-semibold hover:bg-ocean-700 cursor-pointer transition shadow-lg hover:shadow-xl">
-                <span>사진 업로드</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple={false}
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() => handleCategorySelect('marine')}
+                  className="group rounded-2xl border-2 border-ocean-100 hover:border-ocean-300 bg-white px-6 py-6 flex flex-col items-center gap-3 shadow-sm hover:shadow-md transition"
+                >
+                  <span className="text-5xl">🐋</span>
+                  <span className="text-base font-semibold text-gray-900">해양 생물</span>
+                  <span className="text-xs text-gray-500">
+                    직접 촬영한 해양 생물 사진으로 감각적인 배지를 만들어보세요.
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleCategorySelect('terrain')}
+                  className="group rounded-2xl border-2 border-orange-100 hover:border-orange-300 bg-white px-6 py-6 flex flex-col items-center gap-3 shadow-sm hover:shadow-md transition"
+                >
+                  <span className="text-5xl">🪸</span>
+                  <span className="text-base font-semibold text-gray-900">특수 지형</span>
+                  <span className="text-xs text-gray-500">
+                    용암 돔, 케이브 등 인상 깊은 수중 지형을 배지로 기록해보세요.
+                  </span>
+                </button>
+              </div>
             </div>
           )}
 
           {step === 'crop' && (
             <div className="flex flex-col items-center">
-              <p className="text-sm text-gray-500 mb-4">원하는 영역으로 이미지를 이동하고 확대하세요.</p>
+              <p className="text-sm text-gray-500 mb-4">
+                {category === 'terrain'
+                  ? '특수 지형에서 강조하고 싶은 영역을 이동·확대해 주세요.'
+                  : '해양 생물의 매력을 살릴 수 있도록 위치를 조절해 주세요.'}
+              </p>
               
               <div 
                 className="relative overflow-hidden border-2 border-gray-200 rounded-lg bg-gray-100 cursor-move shadow-inner touch-none"
@@ -263,7 +317,9 @@ export const BadgeMakerModal: React.FC<BadgeMakerModalProps> = ({ onClose, onCre
               </div>
 
               <div className="flex gap-4 mt-6 w-full">
-                <Button variant="secondary" onClick={() => setStep('upload')} className="flex-1">다시 선택</Button>
+                <Button variant="secondary" onClick={handleBackToCategory} className="flex-1">
+                  종류/사진 다시 선택
+                </Button>
                 <Button onClick={handleCrop} className="flex-1">영역 자르기</Button>
               </div>
             </div>
@@ -287,7 +343,7 @@ export const BadgeMakerModal: React.FC<BadgeMakerModalProps> = ({ onClose, onCre
                     type="text" 
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="예: 귀여운 니모" 
+                    placeholder={category === 'terrain' ? '예: 비밀의 용암 지형' : '예: 귀여운 니모'} 
                     className="w-full border rounded-md px-3 py-2 focus:ring-ocean-500 focus:border-ocean-500"
                     maxLength={15}
                   />
@@ -298,7 +354,7 @@ export const BadgeMakerModal: React.FC<BadgeMakerModalProps> = ({ onClose, onCre
                     type="text" 
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="예: 제주도에서 만난 친구" 
+                    placeholder={category === 'terrain' ? '예: 수중 용암동굴에서 촬영' : '예: 제주도에서 만난 친구'} 
                     className="w-full border rounded-md px-3 py-2 focus:ring-ocean-500 focus:border-ocean-500"
                     maxLength={30}
                   />

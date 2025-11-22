@@ -33,7 +33,7 @@ export const DiveList: React.FC<DiveListProps> = ({ logs, onSelectLog }) => {
           <div className="relative shrink-0 z-10 mr-4 sm:mr-5">
             <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-full shadow-md border-4 border-white overflow-hidden bg-ocean-50 relative group-hover:scale-105 transition-transform duration-300">
               {log.photos && log.photos.length > 0 ? (
-                <img src={log.photos[0]} alt={log.siteName} className="w-full h-full object-cover" />
+                <img src={log.photos[0]} alt={log.siteName} className="w-full h-full object-cover object-center" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-ocean-300 bg-ocean-50">
                    <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 20 20">

@@ -252,6 +252,7 @@ export const getCustomBadges = async (userId?: string): Promise<Badge[]> => {
     const data = docSnap.data() as Omit<Badge, 'condition'>;
     return {
       ...data,
+      category: data.category ?? 'marine',
       condition: () => true,
     } as Badge;
   });
@@ -275,6 +276,7 @@ export const saveCustomBadge = async (
     doc(customBadgesCollection(userId), badgeId),
     {
       ...badge,
+      category: badge.category ?? 'marine',
       id: badgeId,
       icon: iconUrl,
       storagePath,
