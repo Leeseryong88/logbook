@@ -33,14 +33,15 @@ const displayNameDoc = (normalized: string) =>
 
 export const reserveDisplayName = async (
   uid: string,
-  displayName: string
+  displayName: string,
+  options?: { validateOnly?: boolean }
 ): Promise<boolean> => {
   const normalized = normalizeDisplayName(displayName);
   if (!normalized) {
     throw new Error("invalid_display_name");
   }
 
-  await runTransaction(db, async (tx) => {
+  const result = await runTransaction(db, async (tx) => {
     const ref = displayNameDoc(normalized);
     const snapshot = await tx.get(ref);
     const existingUid = snapshot.exists() ? snapshot.data()?.uid : null;
@@ -49,15 +50,19 @@ export const reserveDisplayName = async (
       throw new Error("display_name_taken");
     }
 
-    tx.set(ref, {
-      uid,
-      displayName,
-      normalized,
-      updatedAt: Date.now(),
-    });
+    if (!options?.validateOnly) {
+      tx.set(ref, {
+        uid,
+        displayName,
+        normalized,
+        updatedAt: Date.now(),
+      });
+    }
+
+    return true;
   });
 
-  return true;
+  return result;
 };
 
 export const createUserProfileIfMissing = async (user: User) => {

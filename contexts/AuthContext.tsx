@@ -115,7 +115,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!user) throw new Error('로그인이 필요합니다.');
 
     if (payload.mode === 'check' && payload.displayName) {
-      const available = await reserveDisplayName(user.uid, payload.displayName);
+      const available = await reserveDisplayName(user.uid, payload.displayName, { validateOnly: true });
       return available;
     }
 
