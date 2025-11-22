@@ -12,6 +12,8 @@ import { AuthScreen } from './components/AuthScreen';
 import { MyPage } from './components/MyPage';
 import { AdminDashboard } from './components/AdminDashboard';
 
+const LOGO_SRC = '/dive-mori-logo.png';
+
 const App: React.FC = () => {
   const { user, loading: authLoading, logout, profile, role, profileLoading } = useAuth();
   const [currentView, setCurrentView] = useState<'dashboard' | 'logs' | 'map' | 'mypage' | 'add' | 'admin'>('dashboard');
@@ -148,7 +150,11 @@ const App: React.FC = () => {
       <header className="bg-white border-b border-ocean-100 sticky top-0 z-30 shadow-sm hidden md:block">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <span className="text-3xl">🤿</span>
+            <img
+              src={LOGO_SRC}
+              alt="DiveMori 로고"
+              className="w-9 h-9 rounded-2xl border border-ocean-100 object-cover shadow-sm"
+            />
             <h1 className="text-xl font-bold text-ocean-900 tracking-tight">DiveMori</h1>
           </div>
           <div className="flex items-center space-x-4">
@@ -183,7 +189,11 @@ const App: React.FC = () => {
       <header className="bg-white border-b border-ocean-100 sticky top-0 z-30 shadow-sm md:hidden">
         <div className="px-4 h-14 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <span className="text-2xl">🤿</span>
+            <img
+              src={LOGO_SRC}
+              alt="DiveMori 로고"
+              className="w-8 h-8 rounded-2xl border border-ocean-100 object-cover shadow-sm"
+            />
             <h1 className="text-lg font-bold text-ocean-900 tracking-tight">DiveMori</h1>
           </div>
           <Button variant="ghost" size="sm" onClick={logout}>

@@ -128,6 +128,13 @@ export const AuthScreen: React.FC = () => {
       <div className="w-full max-w-xl">
         <div className="bg-white rounded-3xl shadow-xl p-8 border border-ocean-100">
           <div className="mb-6">
+            <div className="flex justify-center mb-3">
+              <img
+                src="/dive-mori-logo.png"
+                alt="DiveMori 로고"
+                className="w-12 h-12 rounded-2xl border border-ocean-100 object-cover shadow-sm"
+              />
+            </div>
             <p className="text-sm text-gray-500 text-center">{mode === 'login' ? '환영합니다! 먼저 로그인해주세요.' : '새 계정을 만들고 로그를 시작하세요.'}</p>
             <h2 className="text-2xl font-bold text-ocean-900 mt-1 text-center">
               {mode === 'login' ? '로그인' : '회원가입'}
