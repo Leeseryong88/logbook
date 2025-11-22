@@ -4,7 +4,11 @@ import { UserProfile } from '../types';
 import { approveInstructorApplication, fetchPendingInstructorApplications } from '../services/userService';
 import { Button } from './Button';
 
-export const AdminDashboard: React.FC = () => {
+interface AdminDashboardProps {
+  embedded?: boolean;
+}
+
+export const AdminDashboard: React.FC<AdminDashboardProps> = ({ embedded = false }) => {
   const { role, user } = useAuth();
   const [applications, setApplications] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,6 +41,9 @@ export const AdminDashboard: React.FC = () => {
   };
 
   if (!isAdmin) {
+    if (embedded) {
+      return null;
+    }
     return (
       <div className="p-8 text-center text-gray-500">
         관리자만 접근할 수 있는 영역입니다.
@@ -45,13 +52,15 @@ export const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-xl shadow-sm border border-ocean-100 p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">강사 신청 관리</h2>
-        <p className="text-sm text-gray-500">대기 중인 신청을 검토하고 승인할 수 있습니다.</p>
-      </div>
+    <div className={embedded ? 'space-y-4' : 'space-y-6'}>
+      {!embedded && (
+        <div className="bg-white rounded-xl shadow-sm border border-ocean-100 p-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">강사 신청 관리</h2>
+          <p className="text-sm text-gray-500">대기 중인 신청을 검토하고 승인할 수 있습니다.</p>
+        </div>
+      )}
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className={embedded ? 'bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-6' : 'bg-white rounded-xl shadow-sm border border-gray-100 p-6'}>
         {loading ? (
           <p className="text-gray-500 text-sm">신청 목록을 불러오는 중입니다...</p>
         ) : applications.length === 0 ? (

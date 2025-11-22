@@ -11,7 +11,7 @@ import {
 } from 'firebase/auth';
 import { auth, googleProvider } from '../services/firebase';
 import { UserProfile, UserRole } from '../types';
-import { createUserProfileIfMissing, reserveDisplayName, submitInstructorApplication, subscribeToUserProfile, updateProfileFields, isDisplayNameAvailable } from '../services/userService';
+import { createUserProfileIfMissing, reserveDisplayName, submitInstructorApplication, subscribeToUserProfile, updateProfileFields, isDisplayNameAvailable, updateProfilePhoto as updateProfilePhotoRequest } from '../services/userService';
 
 interface AuthContextValue {
   user: User | null;
@@ -27,6 +27,7 @@ interface AuthContextValue {
   applyForInstructor: (file: File, notes: string) => Promise<void>;
   updateAccountInfo: (payload: { displayName?: string; bio?: string }) => Promise<void>;
   checkDisplayName: (displayName: string) => Promise<boolean>;
+  updateProfilePhoto: (file: File) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -126,6 +127,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const updateProfilePhoto = async (file: File) => {
+    if (!user) throw new Error('로그인이 필요합니다.');
+    await updateProfilePhotoRequest(user.uid, file);
+  };
+
   const role = profile?.role ?? 'diver';
 
   const value: AuthContextValue = {
@@ -142,6 +148,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     applyForInstructor,
     updateAccountInfo,
     checkDisplayName,
+    updateProfilePhoto,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

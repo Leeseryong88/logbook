@@ -10,13 +10,12 @@ import { getLogs, saveLog, deleteLog, getUnlockedBadges } from './services/stora
 import { useAuth } from './contexts/AuthContext';
 import { AuthScreen } from './components/AuthScreen';
 import { MyPage } from './components/MyPage';
-import { AdminDashboard } from './components/AdminDashboard';
 
 const LOGO_SRC = '/dive-mori-logo.png';
 
 const App: React.FC = () => {
   const { user, loading: authLoading, logout, profile, role, profileLoading } = useAuth();
-  const [currentView, setCurrentView] = useState<'dashboard' | 'logs' | 'map' | 'mypage' | 'add' | 'admin'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'logs' | 'map' | 'mypage' | 'add'>('dashboard');
   const [logs, setLogs] = useState<DiveLog[]>([]);
   const [badges, setBadges] = useState<Badge[]>([]);
   const [selectedLog, setSelectedLog] = useState<DiveLog | null>(null);
@@ -133,12 +132,6 @@ const App: React.FC = () => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
           </svg>
         );
-      case 'admin':
-        return (
-          <svg className={`w-6 h-6 ${colorClass}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        );
       default:
         return null;
     }
@@ -211,8 +204,7 @@ const App: React.FC = () => {
             { id: 'dashboard', label: '대시보드' },
             { id: 'logs', label: '로그북' },
             { id: 'map', label: '지도' },
-            { id: 'mypage', label: '마이페이지' },
-            ...(isAdmin ? [{ id: 'admin', label: '관리자' }] : [])
+            { id: 'mypage', label: '마이페이지' }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -262,8 +254,6 @@ const App: React.FC = () => {
               />
             )}
 
-            {currentView === 'admin' && <AdminDashboard />}
-            
             {currentView === 'add' && (
               <LogEntryForm 
                 key={logToEdit?.id || 'new'} 
@@ -327,15 +317,6 @@ const App: React.FC = () => {
           <NavIcon name="mypage" active={currentView === 'mypage'} />
           <span className={`text-[10px] ${currentView === 'mypage' ? 'text-ocean-600 font-bold' : 'text-gray-500'}`}>마이페이지</span>
         </button>
-        {isAdmin && (
-          <button 
-            onClick={() => setCurrentView('admin')}
-            className="flex flex-col items-center justify-center w-full h-full space-y-1"
-          >
-            <NavIcon name="admin" active={currentView === 'admin'} />
-            <span className={`text-[10px] ${currentView === 'admin' ? 'text-ocean-600 font-bold' : 'text-gray-500'}`}>관리자</span>
-          </button>
-        )}
       </nav>
 
       {/* Modal */}

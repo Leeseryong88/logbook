@@ -90,6 +90,9 @@ export interface UserProfile {
   uid: string;
   email: string;
   displayName?: string;
+  bio?: string;
+  photoURL?: string;
+  photoPath?: string;
   role: UserRole;
   createdAt?: string;
   instructorApplication?: InstructorApplication;

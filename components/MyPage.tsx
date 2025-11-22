@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Badge, InstructorApplication, UserProfile, UserRole } from '../types';
 import { BadgeCollection } from './BadgeCollection';
 import { Button } from './Button';
 import { useAuth } from '../contexts/AuthContext';
+import { AdminDashboard } from './AdminDashboard';
 
 interface MyPageProps {
   profile: UserProfile | null;
@@ -49,7 +50,7 @@ const renderApplicationStatus = (application?: InstructorApplication) => {
 };
 
 export const MyPage: React.FC<MyPageProps> = ({ profile, unlockedBadges, onBadgeCreated }) => {
-  const { applyForInstructor, role, updateAccountInfo, checkDisplayName } = useAuth();
+  const { applyForInstructor, role, updateAccountInfo, checkDisplayName, updateProfilePhoto } = useAuth();
   const [certificateFile, setCertificateFile] = useState<File | null>(null);
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -61,6 +62,17 @@ export const MyPage: React.FC<MyPageProps> = ({ profile, unlockedBadges, onBadge
   const [profileMessage, setProfileMessage] = useState<string | null>(null);
   const [nicknameStatus, setNicknameStatus] = useState<'idle' | 'checking' | 'available' | 'unavailable'>('idle');
   const [nicknameMessage, setNicknameMessage] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+    };
+  }, [avatarPreview]);
 
   const application = profile?.instructorApplication;
   const canApply =
@@ -89,6 +101,11 @@ export const MyPage: React.FC<MyPageProps> = ({ profile, unlockedBadges, onBadge
   };
 
   const badgeInfo = roleStyles[role];
+  const currentAvatar = avatarPreview || profile?.photoURL || '';
+  const initials = (profile?.displayName || 'D')
+    .trim()
+    .charAt(0)
+    .toUpperCase();
 
   const handleNicknameCheck = async () => {
     if (!displayNameInput.trim()) {
@@ -131,6 +148,14 @@ export const MyPage: React.FC<MyPageProps> = ({ profile, unlockedBadges, onBadge
         displayName: displayNameInput,
         bio: bioInput,
       });
+      if (avatarFile) {
+        await updateProfilePhoto(avatarFile);
+        setAvatarFile(null);
+        setAvatarPreview(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
       setProfileMessage('계정 정보가 저장되었습니다.');
       setIsEditingProfile(false);
       setNicknameStatus('idle');
@@ -142,14 +167,38 @@ export const MyPage: React.FC<MyPageProps> = ({ profile, unlockedBadges, onBadge
     }
   };
 
+  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setAvatarFile(file);
+    const previewUrl = URL.createObjectURL(file);
+    setAvatarPreview(previewUrl);
+  };
+
   return (
     <div className="space-y-8 animate-fade-in">
       <section className="bg-white rounded-xl shadow-sm border border-ocean-100 p-6 space-y-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-1">
-            <p className="text-sm text-gray-500">계정 정보</p>
-            <h2 className="text-2xl font-bold text-gray-900">{profile?.displayName || '익명 다이버'}</h2>
-            <p className="text-sm text-gray-500">{profile?.email}</p>
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <div className="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-white shadow-lg bg-ocean-100 flex items-center justify-center overflow-hidden text-2xl text-ocean-600 font-bold">
+                {currentAvatar ? (
+                  <img src={currentAvatar} alt="프로필 사진" className="w-full h-full object-cover" />
+                ) : (
+                  <span>{initials}</span>
+                )}
+              </div>
+              {avatarFile && (
+                <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full border border-purple-200">
+                  미저장
+                </span>
+              )}
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm text-gray-500">계정 정보</p>
+              <h2 className="text-2xl font-bold text-gray-900">{profile?.displayName || '익명 다이버'}</h2>
+              <p className="text-sm text-gray-500">{profile?.email}</p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold border ${badgeInfo.className}`}>
@@ -158,7 +207,13 @@ export const MyPage: React.FC<MyPageProps> = ({ profile, unlockedBadges, onBadge
             <Button
               size="sm"
               variant={isEditingProfile ? 'secondary' : 'ghost'}
-              onClick={() => setIsEditingProfile((prev) => !prev)}
+              onClick={() => {
+                setIsEditingProfile((prev) => !prev);
+                setProfileMessage(null);
+                setAvatarFile(null);
+                setAvatarPreview(null);
+                if (fileInputRef.current) fileInputRef.current.value = '';
+              }}
             >
               {isEditingProfile ? '취소' : '정보 수정'}
             </Button>
@@ -198,6 +253,25 @@ export const MyPage: React.FC<MyPageProps> = ({ profile, unlockedBadges, onBadge
                 </p>
               )}
             </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">프로필 사진</label>
+              <div className="flex items-center gap-3">
+                <Button type="button" variant="secondary" size="sm" onClick={() => fileInputRef.current?.click()}>
+                  사진 선택
+                </Button>
+                {avatarFile && (
+                  <span className="text-xs text-gray-500 truncate max-w-[140px]">{avatarFile.name}</span>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={fileInputRef}
+                  onChange={handleAvatarChange}
+                  className="hidden"
+                />
+              </div>
+              <p className="text-xs text-gray-400">정사각형 이미지를 권장합니다. JPG, PNG 등 5MB 이하 파일을 업로드하세요.</p>
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">소개 (선택)</label>
               <textarea
@@ -234,46 +308,63 @@ export const MyPage: React.FC<MyPageProps> = ({ profile, unlockedBadges, onBadge
         )}
       </section>
 
-      <section className="bg-white rounded-xl shadow-sm border border-ocean-100 p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-bold text-gray-900">강사 인증</h3>
-            <p className="text-sm text-gray-500">강사 인증을 신청하면 관리자 검토 후 강사 계정으로 전환됩니다.</p>
+      {role === 'admin' && (
+        <section className="space-y-4">
+          <div className="bg-white rounded-xl shadow-sm border border-ocean-100 p-6 flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">관리자 도구</h3>
+              <p className="text-sm text-gray-500">강사 신청을 검토하고 승인할 수 있습니다.</p>
+            </div>
+            <span className="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700 border border-purple-200 font-semibold">
+              Admin
+            </span>
           </div>
-        </div>
+          <AdminDashboard embedded />
+        </section>
+      )}
 
-        {renderApplicationStatus(application)}
+      {role !== 'admin' && (
+        <section className="bg-white rounded-xl shadow-sm border border-ocean-100 p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">강사 인증</h3>
+              <p className="text-sm text-gray-500">강사 인증을 신청하면 관리자 검토 후 강사 계정으로 전환됩니다.</p>
+            </div>
+          </div>
 
-        {canApply && (
-          <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">자격증 파일</label>
-              <input
-                type="file"
-                accept="image/*,application/pdf"
-                onChange={(e) => setCertificateFile(e.target.files?.[0] || null)}
-                className="w-full border rounded-md px-3 py-2"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">추가 메모 (선택)</label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={3}
-                className="w-full border rounded-md px-3 py-2"
-                placeholder="자격증 발급 기관, 번호 등 추가 정보가 있다면 작성해주세요."
-              ></textarea>
-            </div>
-            {message && (
-              <p className="text-sm text-gray-600">{message}</p>
-            )}
-            <Button type="submit" isLoading={submitting} disabled={submitting || !certificateFile}>
-              강사 인증 신청하기
-            </Button>
-          </form>
-        )}
-      </section>
+          {renderApplicationStatus(application)}
+
+          {canApply && (
+            <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">자격증 파일</label>
+                <input
+                  type="file"
+                  accept="image/*,application/pdf"
+                  onChange={(e) => setCertificateFile(e.target.files?.[0] || null)}
+                  className="w-full border rounded-md px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">추가 메모 (선택)</label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={3}
+                  className="w-full border rounded-md px-3 py-2"
+                  placeholder="자격증 발급 기관, 번호 등 추가 정보가 있다면 작성해주세요."
+                ></textarea>
+              </div>
+              {message && (
+                <p className="text-sm text-gray-600">{message}</p>
+              )}
+              <Button type="submit" isLoading={submitting} disabled={submitting || !certificateFile}>
+                강사 인증 신청하기
+              </Button>
+            </form>
+          )}
+        </section>
+      )}
 
       <section>
         <BadgeCollection unlockedBadges={unlockedBadges} onBadgeCreated={onBadgeCreated} />

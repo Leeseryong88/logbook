@@ -13,6 +13,7 @@ import {
   where,
 } from "firebase/firestore";
 import {
+  deleteObject,
   getDownloadURL,
   ref,
   uploadBytes,
@@ -185,6 +186,47 @@ export const approveInstructorApplication = async (
     role: "instructor",
     instructorApplication: updatedApplication,
   });
+};
+
+export const updateProfilePhoto = async (
+  uid: string,
+  file: File
+): Promise<void> => {
+  if (!uid) throw new Error("로그인이 필요합니다.");
+  const extension = file.type?.split("/").pop()?.split(";")[0] || "jpg";
+  const path = `profile/${uid}/avatar-${Date.now()}.${extension}`;
+  const storageRef = ref(storage, path);
+  await uploadBytes(storageRef, file);
+  const photoURL = await getDownloadURL(storageRef);
+
+  let previousPath: string | undefined;
+  try {
+    const snapshot = await getDoc(userDocRef(uid));
+    if (snapshot.exists()) {
+      const data = snapshot.data() as UserProfile;
+      previousPath = data.photoPath;
+    }
+  } catch (error) {
+    console.warn("Failed to fetch previous profile photo path", error);
+  }
+
+  await setDoc(
+    userDocRef(uid),
+    {
+      photoURL,
+      photoPath: path,
+      updatedAt: new Date().toISOString(),
+    },
+    { merge: true }
+  );
+
+  if (previousPath && previousPath !== path) {
+    try {
+      await deleteObject(ref(storage, previousPath));
+    } catch (error) {
+      console.warn("Failed to delete previous profile photo", error);
+    }
+  }
 };
 
 export const updateProfileFields = async (

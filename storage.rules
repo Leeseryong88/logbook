@@ -20,6 +20,10 @@ service firebase.storage {
     match /certifications/{userId}/{allPaths=**} {
       allow read, write: if signedIn() && (request.auth.uid == userId || isAdmin());
     }
+
+    match /profile/{userId}/{allPaths=**} {
+      allow read, write: if signedIn() && (request.auth.uid == userId || isAdmin());
+    }
   }
 }
 
