@@ -149,7 +149,7 @@ const App: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <span className="text-3xl">🤿</span>
-            <h1 className="text-xl font-bold text-ocean-900 tracking-tight">OceanLog AI</h1>
+            <h1 className="text-xl font-bold text-ocean-900 tracking-tight">DiveMori</h1>
           </div>
           <div className="flex items-center space-x-4">
             <div className="text-right hidden sm:block">
@@ -184,7 +184,7 @@ const App: React.FC = () => {
         <div className="px-4 h-14 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <span className="text-2xl">🤿</span>
-            <h1 className="text-lg font-bold text-ocean-900 tracking-tight">OceanLog AI</h1>
+            <h1 className="text-lg font-bold text-ocean-900 tracking-tight">DiveMori</h1>
           </div>
           <Button variant="ghost" size="sm" onClick={logout}>
             로그아웃

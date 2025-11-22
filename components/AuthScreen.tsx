@@ -132,7 +132,7 @@ export const AuthScreen: React.FC = () => {
             <h2 className="text-2xl font-bold text-ocean-900 mt-1 text-center">
               {mode === 'login' ? '로그인' : '회원가입'}
             </h2>
-            <p className="text-center text-xs text-gray-400">OceanLog AI • 스마트 다이브 로그</p>
+            <p className="text-center text-xs text-gray-400">DiveMori • 스마트 다이브 로그</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">

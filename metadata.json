@@ -1,6 +1,6 @@
 {
-  "name": "OceanLog AI - Smart Dive Journal",
-  "description": "AI를 활용한 스마트 다이빙 로그북. 다이빙 기록, 해양 생물 식별, 배지 수집 및 통계 분석을 제공합니다.",
+  "name": "DiveMori - Smart Dive Journal",
+  "description": "DiveMori는 다이빙 기록, 해양 생물 식별, 배지 수집 및 통계 분석을 제공하는 스마트 로그북입니다.",
   "requestFramePermissions": [
     "camera",
     "geolocation"
