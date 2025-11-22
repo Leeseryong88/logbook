@@ -11,7 +11,7 @@ import {
 } from 'firebase/auth';
 import { auth, googleProvider } from '../services/firebase';
 import { UserProfile, UserRole } from '../types';
-import { createUserProfileIfMissing, reserveDisplayName, submitInstructorApplication, subscribeToUserProfile } from '../services/userService';
+import { createUserProfileIfMissing, reserveDisplayName, submitInstructorApplication, subscribeToUserProfile, updateProfileFields } from '../services/userService';
 
 interface AuthContextValue {
   user: User | null;
@@ -25,6 +25,7 @@ interface AuthContextValue {
   resetPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
   applyForInstructor: (file: File, notes: string) => Promise<void>;
+  updateAccountInfo: (payload: { displayName?: string; bio?: string }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -110,6 +111,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     await submitInstructorApplication(user.uid, file, notes);
   };
 
+  const updateAccountInfo = async (payload: { displayName?: string; bio?: string }) => {
+    if (!user) throw new Error('로그인이 필요합니다.');
+    await updateProfileFields(user.uid, payload);
+    if (payload.displayName) {
+      await updateProfile(user, { displayName: payload.displayName });
+      await reserveDisplayName(user.uid, payload.displayName);
+    }
+  };
+
   const role = profile?.role ?? 'diver';
 
   const value: AuthContextValue = {
@@ -124,6 +134,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     resetPassword,
     logout,
     applyForInstructor,
+    updateAccountInfo,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

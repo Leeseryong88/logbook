@@ -49,11 +49,16 @@ const renderApplicationStatus = (application?: InstructorApplication) => {
 };
 
 export const MyPage: React.FC<MyPageProps> = ({ profile, unlockedBadges, onBadgeCreated }) => {
-  const { applyForInstructor, role } = useAuth();
+  const { applyForInstructor, role, updateAccountInfo } = useAuth();
   const [certificateFile, setCertificateFile] = useState<File | null>(null);
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [displayNameInput, setDisplayNameInput] = useState(profile?.displayName || '');
+  const [bioInput, setBioInput] = useState(profile?.bio || '');
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileMessage, setProfileMessage] = useState<string | null>(null);
 
   const application = profile?.instructorApplication;
   const canApply =
@@ -83,17 +88,92 @@ export const MyPage: React.FC<MyPageProps> = ({ profile, unlockedBadges, onBadge
 
   const badgeInfo = roleStyles[role];
 
+  const handleProfileSave = async () => {
+    if (!profile) return;
+    try {
+      setProfileSaving(true);
+      setProfileMessage(null);
+      await updateAccountInfo({
+        displayName: displayNameInput,
+        bio: bioInput,
+      });
+      setProfileMessage('계정 정보가 저장되었습니다.');
+      setIsEditingProfile(false);
+    } catch (error: any) {
+      setProfileMessage(error?.message || '저장 중 오류가 발생했습니다.');
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-8 animate-fade-in">
-      <section className="bg-white rounded-xl shadow-sm border border-ocean-100 p-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <p className="text-sm text-gray-500">계정 정보</p>
-          <h2 className="text-2xl font-bold text-gray-900">{profile?.displayName || '익명 다이버'}</h2>
-          <p className="text-sm text-gray-500">{profile?.email}</p>
+      <section className="bg-white rounded-xl shadow-sm border border-ocean-100 p-6 space-y-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-1">
+            <p className="text-sm text-gray-500">계정 정보</p>
+            <h2 className="text-2xl font-bold text-gray-900">{profile?.displayName || '익명 다이버'}</h2>
+            <p className="text-sm text-gray-500">{profile?.email}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold border ${badgeInfo.className}`}>
+              {badgeInfo.label}
+            </div>
+            <Button
+              size="sm"
+              variant={isEditingProfile ? 'secondary' : 'ghost'}
+              onClick={() => setIsEditingProfile((prev) => !prev)}
+            >
+              {isEditingProfile ? '취소' : '정보 수정'}
+            </Button>
+          </div>
         </div>
-        <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold border ${badgeInfo.className}`}>
-          {badgeInfo.label}
-        </div>
+
+        {isEditingProfile && (
+          <div className="grid md:grid-cols-2 gap-4 border-t pt-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">닉네임</label>
+              <input
+                type="text"
+                value={displayNameInput}
+                onChange={(e) => setDisplayNameInput(e.target.value)}
+                className="w-full border rounded-lg px-3 py-2 focus:ring-ocean-500 focus:border-ocean-500"
+                maxLength={20}
+              />
+              <p className="text-xs text-gray-400 mt-1">닉네임 변경 시 중복 확인 후 저장됩니다.</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">소개 (선택)</label>
+              <textarea
+                value={bioInput}
+                onChange={(e) => setBioInput(e.target.value)}
+                rows={3}
+                className="w-full border rounded-lg px-3 py-2 focus:ring-ocean-500 focus:border-ocean-500"
+                maxLength={120}
+              ></textarea>
+            </div>
+            {profileMessage && (
+              <p className="md:col-span-2 text-sm text-blue-600">{profileMessage}</p>
+            )}
+            <div className="md:col-span-2 flex justify-end gap-3">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setDisplayNameInput(profile?.displayName || '');
+                  setBioInput(profile?.bio || '');
+                  setIsEditingProfile(false);
+                  setProfileMessage(null);
+                }}
+                disabled={profileSaving}
+              >
+                취소
+              </Button>
+              <Button onClick={handleProfileSave} isLoading={profileSaving} disabled={profileSaving}>
+                저장하기
+              </Button>
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="bg-white rounded-xl shadow-sm border border-ocean-100 p-6 space-y-4">

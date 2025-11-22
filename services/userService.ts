@@ -173,3 +173,27 @@ export const approveInstructorApplication = async (
   });
 };
 
+export const updateProfileFields = async (
+  uid: string,
+  payload: { displayName?: string; bio?: string }
+) => {
+  const updates: Record<string, unknown> = {};
+  if (typeof payload.displayName === "string") {
+    updates.displayName = payload.displayName;
+  }
+  if (typeof payload.bio === "string") {
+    updates.bio = payload.bio;
+  }
+
+  if (!Object.keys(updates).length) return;
+
+  await setDoc(
+    userDocRef(uid),
+    {
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    },
+    { merge: true }
+  );
+};
+
